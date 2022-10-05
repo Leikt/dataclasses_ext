@@ -142,6 +142,12 @@ class TestBase(unittest.TestCase):
             class Dummy:
                 a1: str = field(validator=str)
 
+    def test_partial_init(self):
+        @dataclass
+        class Dummy:
+            v1: int = field(validator=int)
+            v2: int = field(init=False)
+
     def test_default_value(self):
         @dataclass
         class Dummy:
