@@ -359,6 +359,8 @@ def field(*, default=MISSING, default_factory=MISSING, init=True, repr=True,
 
     if default is not MISSING and default_factory is not MISSING:
         raise ValueError('cannot specify both default and default_factory')
+    if not init and validator:
+        raise ValueError('cannot specify a validator with init to False')
     return Field(default, default_factory, init, repr, hash, compare,
                  metadata, validator)
 
@@ -973,6 +975,8 @@ def _process_class(cls, init, repr, eq, order, unsafe_hash, frozen):
     # Build the validator dictionary
     validators = {f.validator_name(): f.validator for f in cls_fields if f.validator}
     _set_new_attribute(cls, '__validators__', validators)
+    if not init and len(validators) > 0:
+        raise ValueError('cannot specify validators when init is False')
 
     if repr:
         flds = [f for f in field_list if f.repr]

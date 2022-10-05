@@ -89,8 +89,55 @@ class TestBase(unittest.TestCase):
         class Dummy:
             v1: int = field(validator=validate_mini(10))
             v2: int = field(validator=validate_mini(100))
+
         # Should not raise any exception
 
         d = Dummy(0, 0)
         self.assertEqual(10, d.v1)
         self.assertEqual(100, d.v2)
+
+    def test_object_method_validator(self):
+        class Validator:
+            def string_is_five_long(self, value: str) -> str:
+                if len(value) != 5:
+                    raise ValueError(f"String '{value}' is not 10 characters long.")
+                return value
+
+        @dataclass
+        class Dummy:
+            string: str = field(validator=Validator().string_is_five_long)
+
+        with self.assertRaises(ValueError):
+            Dummy("too long string")
+
+        Dummy("12345")  # > Should be okay
+
+    def test_classmethod_validator(self):
+        class Validators:
+            @classmethod
+            def string_is_five_long(cls, value: str) -> str:
+                if len(value) != 5:
+                    raise ValueError(f"String '{value}' is not 10 characters long.")
+                return value
+
+        @dataclass
+        class Dummy:
+            string: str = field(validator=Validators.string_is_five_long)
+
+        with self.assertRaises(ValueError):
+            Dummy("too long string")
+
+        Dummy("12345")  # > Should be okay
+
+    def test_no_field_init(self):
+        with self.assertRaises(ValueError):
+            @dataclass
+            class Dummy:
+                a1: str
+                a2: str = field(init=False, validator=str)
+
+    def test_no_class_init(self):
+        with self.assertRaises(ValueError):
+            @dataclass(init=False)
+            class Dummy:
+                a1: str = field(validator=str)
