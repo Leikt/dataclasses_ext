@@ -25,6 +25,8 @@ __all__ = ['dataclass',
            'is_dataclass',
            ]
 
+from typing import Optional
+
 
 # Conditions for adding methods.  The boxes indicate what action the
 # dataclass decorator takes.  For all of these tables, when I talk
@@ -154,7 +156,7 @@ __all__ = ['dataclass',
 
 # Raised when an attempt is made to modify a frozen class.
 class FrozenInstanceError(AttributeError): pass
-class DuplicatedValidatorError(ValueError): pass
+
 
 # A sentinel object for default values to signal that a default
 # factory will be used.  This is given a nice repr() which will appear
@@ -300,6 +302,12 @@ class Field:
             func(self.default, owner, name)
 
     __class_getitem__ = classmethod(GenericAlias)
+
+    def validator_name(self) -> Optional[str]:
+        if not self.validator:
+            return
+
+        return f'{self.name}_{self.validator.__name__}'
 
 
 class _DataclassParams:
@@ -479,7 +487,7 @@ def _field_init(f, frozen, globals, self_name):
         return None
 
     if f.validator:
-        value = f"{self_name}.__validators__['{f.validator.__name__}']({value})"
+        value = f"{self_name}.__validators__['{f.validator_name()}']({value})"
 
     # Now, actually generate the field assignment.
     return _field_assign(frozen, f.name, value, self_name)
@@ -963,14 +971,8 @@ def _process_class(cls, init, repr, eq, order, unsafe_hash, frozen):
     field_list = [f for f in fields.values() if f._field_type is _FIELD]
 
     # Build the validator dictionary
-    validators_list = [f.validator for f in cls_fields if f.validator]
-    if len(validators_list) > 0:
-        validators = {}
-        for v in validators_list:
-            if v.__name__ in validators:
-                raise DuplicatedValidatorError(f'Duplicated validator name: "{v.__name__}"')
-            validators[v.__name__] = v
-        _set_new_attribute(cls, '__validators__', validators)
+    validators = {f.validator_name(): f.validator for f in cls_fields if f.validator}
+    _set_new_attribute(cls, '__validators__', validators)
 
     if repr:
         flds = [f for f in field_list if f.repr]

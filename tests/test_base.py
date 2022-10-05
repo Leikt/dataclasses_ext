@@ -1,6 +1,6 @@
 import unittest
 
-from dataclasses_ext import dataclass, field, DuplicatedValidatorError
+from dataclasses_ext import dataclass, field
 
 
 class TestBase(unittest.TestCase):
@@ -49,39 +49,18 @@ class TestBase(unittest.TestCase):
         d = Dummy(12)
         self.assertEqual("12 years old", d.age_str)
 
-    def test_duplicate_validator(self):
-        def lenlongenough(x: int):
-            def validator(value: list):
-                if len(value) < x:
-                    raise ValueError("Not long enough")
-
-            return validator
-
-        def lenshortenough(x: int):
-            def validator(value: list):
-                if len(value) > x:
-                    raise ValueError("Not long enough")
-
-            return validator
-
-        with self.assertRaises(DuplicatedValidatorError):
-            @dataclass
-            class Dummy:
-                v1: list = field(validator=lenshortenough(10))
-                v2: list = field(validator=lenlongenough(10))
-
     def test_best_practice_validator(self):
         def mini(x: int):
-            def mini(value: int):
+            def _mini(value: int):
                 return max(x, value)
 
-            return mini
+            return _mini
 
         def maxi(x: int):
-            def maxi(value: int):
+            def _maxi(value: int):
                 return min(value, x)
 
-            return maxi
+            return _maxi
 
         @dataclass
         class Dummy:
@@ -91,3 +70,27 @@ class TestBase(unittest.TestCase):
         d = Dummy(5, 52)
         self.assertEqual(12, d.v1)
         self.assertEqual(8, d.v2)
+
+    def test_same_validator(self):
+        @dataclass
+        class Dummy:
+            v1: int = field(validator=str)
+            v2: int = field(validator=str)
+        # Should not raise any error
+
+    def test_same_validator_with_parameters(self):
+        def validate_mini(x: int):
+            def _validate_mini(value: int) -> int:
+                return max(x, value)
+
+            return _validate_mini
+
+        @dataclass
+        class Dummy:
+            v1: int = field(validator=validate_mini(10))
+            v2: int = field(validator=validate_mini(100))
+        # Should not raise any exception
+
+        d = Dummy(0, 0)
+        self.assertEqual(10, d.v1)
+        self.assertEqual(100, d.v2)
