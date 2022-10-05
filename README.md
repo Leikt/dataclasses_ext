@@ -31,8 +31,9 @@ foo2 = Foo('not_a_valid_email', ['some_address']) #> Raise a ValueError "'not_a_
 foo3 = Foo('valid@validemail.com') #> Raise a ValueError "List cannot be empty"
 ```
 
-## when no init
-When the init method creation is disabled. You cannot add any validator the dataclass:
+## When no init
+
+Since the validation is only applied on the object creation through the __init__ method, you cannot use validation when init is disable:
 
 ```python
 from dataclasses_ext import dataclass, field
@@ -48,4 +49,11 @@ class Goo:
     value: str = field(validator=str, init=False)
 
 Goo("Test") #> Will raise the same error for the same reason.
+
+@dataclass
+class Hoo:
+    value1: str = field(validator=str)
+    value2: str = field(init=False)
+
+Hoo("Test") #> This work because the init is only disable for the field value2
 ```
