@@ -141,3 +141,24 @@ class TestBase(unittest.TestCase):
             @dataclass(init=False)
             class Dummy:
                 a1: str = field(validator=str)
+
+    def test_default_value(self):
+        @dataclass
+        class Dummy:
+            v: int = field(default=10, validator=int)
+
+        d = Dummy()
+        self.assertEqual(10, d.v)
+
+    def test_default_factory(self):
+        def validate_list(value: list) -> list:
+            if len(value) == 0:
+                raise ValueError("List cannot be empty.")
+            return value
+
+        @dataclass
+        class Dummy:
+            v: int = field(default_factory=list, validator=validate_list)
+
+        with self.assertRaises(ValueError):
+            Dummy()
