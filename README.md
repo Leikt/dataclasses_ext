@@ -30,3 +30,22 @@ foo1 = Foo('valid@validemail.com', ['some_address']) #> Works
 foo2 = Foo('not_a_valid_email', ['some_address']) #> Raise a ValueError "'not_a_valid_email' is not a valid email address. It should contain a @ character."
 foo3 = Foo('valid@validemail.com') #> Raise a ValueError "List cannot be empty"
 ```
+
+## when no init
+When the init method creation is disabled. You cannot add any validator the dataclass:
+
+```python
+from dataclasses_ext import dataclass, field
+
+@dataclass(init=False)
+class Foo:
+    value: str = field(validator=str)
+
+Foo("test") #> Will raise a ValueError because validator are not allowed when the init is disabled
+
+@dataclass
+class Goo:
+    value: str = field(validator=str, init=False)
+
+Goo("Test") #> Will raise the same error for the same reason.
+```
